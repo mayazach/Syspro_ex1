@@ -1,0 +1,361 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "functions.h"
+#include "heap.h"
+#include "list1.h"
+#include "list2.h"
+#include "hash1.h"
+#include "hash2.h"
+
+void insert_function(char* cdr_record,float config[5][3],int* sizes,myPointers* pointers){
+	callerInfo origin;
+	calleeInfo dest;
+	heapData cost;
+	char* buf[MAX_LENGTH];
+	int count;
+	if(buf[0] = strtok(cdr_record,";"))
+		for(count=1;count<9;count++){
+			buf[count]=strtok(NULL,";");
+			if(buf[count] == NULL){
+				printf("Insert failed: wrong CDR format.\n");
+				return;
+			}
+		}
+	else{
+		printf("Insert failed: wrong CDR format.\n");
+		return;
+	}
+	strcpy(origin.call_id,buf[0]);
+	strcpy(origin.callee_num,buf[2]);
+	strcpy(origin.date,buf[3]);
+	strcpy(origin.time,buf[4]);
+	origin.duration = atoi(buf[5]);
+	origin.type = atoi(buf[6]);
+	origin.tarrif = atoi(buf[7]);
+	origin.fault_condition = atoi(buf[8]);
+
+	if((pointers->table1) == NULL){
+		pointers->table1 = create_hashtable1(sizes[0],sizes[2]);
+		add_hashtable1(pointers->table1,buf[1],origin);
+	}
+	else
+		add_hashtable1(pointers->table1,buf[1],origin);
+
+	strcpy(dest.call_id,buf[0]);
+        strcpy(dest.caller_num,buf[1]);
+        strcpy(dest.date,buf[3]);
+        strcpy(dest.time,buf[4]);
+        dest.duration = atoi(buf[5]);
+        dest.type = atoi(buf[6]);
+        dest.tarrif = atoi(buf[7]);
+        dest.fault_condition = atoi(buf[8]);
+
+	if((pointers->table2) == NULL){
+                pointers->table2 = create_hashtable2(sizes[1],sizes[2]);
+                add_hashtable2(pointers->table2,buf[2],dest);
+        }
+        else
+                add_hashtable2(pointers->table2,buf[2],dest);
+
+	strcpy(cost.caller_id,buf[1]);
+	cost.spent = calculate_cost(config,atoi(buf[6]),atoi(buf[7]),atoi(buf[5]));
+	if((pointers->heap) == NULL){
+		pointers->heap = heap_create();
+		heap_add(pointers->heap,cost);
+	}
+	else
+		heap_add(pointers->heap,cost);
+}
+
+void delete_function(char* caller,char* cdr_id,myPointers* pointers){
+	if((pointers->table1) != NULL){
+		delete_hashtable1(pointers->table1,caller,cdr_id);
+	}
+}
+
+void find_function(int argnum,char** my_args,myPointers* pointers){
+	int time1,time2,year1,year2;
+	int i;
+	char buf[9];
+	if(argnum == 1){
+		if((pointers->table1) != NULL)
+			print_hashtable1_caller(pointers->table1,my_args[0]);
+	}
+	else if(argnum == 3){
+		if(strlen(my_args[1]) == 5){
+			buf[0] = my_args[1][0];
+			buf[1] = my_args[1][1];
+			buf[2] = my_args[1][3];
+			buf[3] = my_args[1][4];
+			buf[4]='\0';
+			time1 = atoi(buf);
+			buf[0] = my_args[2][0];
+                        buf[1] = my_args[2][1];
+                        buf[2] = my_args[2][3];
+                        buf[3] = my_args[2][4];
+                        buf[4]='\0';
+			time2 = atoi(buf);
+			if((pointers->table1) != NULL)
+                        	print_hashtable1_time(pointers->table1,my_args[0],time1,time2);
+		}
+		else {
+			for(i = 4;i<=7;i++){
+				buf[i-4] = my_args[1][i];
+			}
+			buf[4] = my_args[1][2];
+			buf[5] = my_args[1][3];
+			buf[6] = my_args[1][0];
+			buf[7] = my_args[1][1];
+			buf[8] = '\0';
+			year1 = atoi(buf);
+			for(i = 4;i<=7;i++){
+                                buf[i-4] = my_args[2][i];
+                        }
+                        buf[4] = my_args[2][2];
+                        buf[5] = my_args[2][3];
+                        buf[6] = my_args[2][0];
+                        buf[7] = my_args[2][1];
+			year2 = atoi(buf);
+			if((pointers->table1) != NULL)
+                                print_hashtable1_year(pointers->table1,my_args[0],year1,year2);
+		}
+	}
+	else{
+		buf[0] = my_args[1][0];
+                buf[1] = my_args[1][1];
+                buf[2] = my_args[1][3];
+                buf[3] = my_args[1][4];
+                buf[4]='\0';
+                time1 = atoi(buf);
+		for(i = 4;i<=7;i++){
+                	buf[i-4] = my_args[2][i];
+                }
+                buf[4] = my_args[2][2];
+                buf[5] = my_args[2][3];
+                buf[6] = my_args[2][0];
+                buf[7] = my_args[2][1];
+                buf[8] = '\0';
+		year1 = atoi(buf);
+		buf[0] = my_args[3][0];
+                buf[1] = my_args[3][1];
+                buf[2] = my_args[3][3];
+                buf[3] = my_args[3][4];
+                buf[4]='\0';
+                time2 = atoi(buf);
+		for(i = 4;i<=7;i++){
+                        buf[i-4] = my_args[4][i];
+                }
+                buf[4] = my_args[4][2];
+                buf[5] = my_args[4][3];
+                buf[6] = my_args[4][0];
+                buf[7] = my_args[4][1];
+                buf[8] = '\0';
+                year2 = atoi(buf);
+		if((pointers->table1) != NULL)
+                                print_hashtable1_timeyear(pointers->table1,my_args[0],time1,time2,year1,year2);
+	}
+}
+
+void lookup_function(int argnum,char** my_args,myPointers* pointers){
+	int time1,time2,year1,year2;
+        int i;
+        char buf[9];
+        if(argnum == 1){
+                if((pointers->table2) != NULL)
+                        print_hashtable2_callee(pointers->table2,my_args[0]);
+        }
+
+        else if(argnum == 3){
+                if(strlen(my_args[1]) == 5){
+                        buf[0] = my_args[1][0];
+                        buf[1] = my_args[1][1];
+                        buf[2] = my_args[1][3];
+                        buf[3] = my_args[1][4];
+                        buf[4]='\0';
+                        time1 = atoi(buf);
+                        buf[0] = my_args[2][0];
+                        buf[1] = my_args[2][1];
+                        buf[2] = my_args[2][3];
+                        buf[3] = my_args[2][4];
+                        buf[4]='\0';
+                        time2 = atoi(buf);
+			if((pointers->table2) != NULL)
+                        	print_hashtable2_time(pointers->table2,my_args[0],time1,time2);
+                }
+                else {
+                        for(i = 4;i<=7;i++){
+                                buf[i-4] = my_args[1][i];
+                        }
+                        buf[4] = my_args[1][2];
+                        buf[5] = my_args[1][3];
+                        buf[6] = my_args[1][0];
+                        buf[7] = my_args[1][1];
+                        buf[8] = '\0';
+                        year1 = atoi(buf);
+                        for(i = 4;i<=7;i++){
+                                buf[i-4] = my_args[2][i];
+                        }
+                        buf[4] = my_args[2][2];
+                        buf[5] = my_args[2][3];
+                        buf[6] = my_args[2][0];
+                        buf[7] = my_args[2][1];
+                        year2 = atoi(buf);
+			if((pointers->table2) != NULL)
+                                print_hashtable2_year(pointers->table2,my_args[0],year1,year2);
+	        }
+	}
+        else{
+                buf[0] = my_args[1][0];
+                buf[1] = my_args[1][1];
+                buf[2] = my_args[1][3];
+                buf[3] = my_args[1][4];
+                buf[4]='\0';
+                time1 = atoi(buf);
+                for(i = 4;i<=7;i++){
+                        buf[i-4] = my_args[2][i];
+                }
+                buf[4] = my_args[2][2];
+                buf[5] = my_args[2][3];
+                buf[6] = my_args[2][0];
+                buf[7] = my_args[2][1];
+                buf[8] = '\0';
+                year1 = atoi(buf);
+                buf[0] = my_args[3][0];
+                buf[1] = my_args[3][1];
+                buf[2] = my_args[3][3];
+                buf[3] = my_args[3][4];
+                buf[4]='\0';
+		time2 = atoi(buf);
+                for(i = 4;i<=7;i++){
+                        buf[i-4] = my_args[4][i];
+                }
+                buf[4] = my_args[4][2];
+                buf[5] = my_args[4][3];
+                buf[6] = my_args[4][0];
+                buf[7] = my_args[4][1];
+                buf[8] = '\0';
+                year2 = atoi(buf);
+		if((pointers->table2) != NULL)
+                	print_hashtable2_timeyear(pointers->table2,my_args[0],time1,time2,year1,year2);
+        }
+}
+
+
+void indist_function(char* caller1, char* caller2){
+	char** callers1;
+	char** callees1;
+	char** callers2;
+	char** callees2;
+	if(((pointers->table1) == NULL) || ((pointers->table2) == NULL)){
+		printf("No calls found\n.");
+		return;
+	}
+	int num = hash1_function(pointers->table1->size,caller1);
+	callers1 = callers_bucket_one(pointers->table1->buckets[num],caller1,caller2);
+	num = hash2_function(pointers->table2->size,caller1);
+        callees1 = callees_bucket_two(pointers->table2->buckets[num],caller1,caller2);
+	num = hash1_function(pointers->table1->size,caller2);
+        callers2 = callers_bucket_one(pointers->table1->buckets[num],caller2,caller1);
+	num = hash2_function(pointers->table2->size,caller2);
+        callees2 = callees_bucket_two(pointers->table2->buckets[num],caller2,caller1);
+
+
+
+        return;
+}
+
+
+void topdest_function(char* caller,myPointers* pointers){
+	if((pointers->table1) != NULL){
+                topdest_hashtable1(pointers->table1,caller);
+        }
+}
+
+
+void top_function(char* k,myPointers* pointers){
+	int topk = atoi(k);
+	if((pointers->heap) != NULL)
+		heap_topk(pointers->heap,topk);
+}
+
+
+void bye_function(myPointers* pointers){
+	if((pointers->table1) != NULL){
+                destroy_hashtable1(pointers->table1);
+		pointers->table1 = NULL;
+	}
+        if((pointers->table2) != NULL){
+                destroy_hashtable2(pointers->table2);
+		pointers->table2 = NULL;
+	}
+	if((pointers->heap) != NULL){
+                heap_destroy(pointers->heap);
+                pointers->heap = NULL;
+        }
+
+}
+
+
+void print_function(char* hashtableX,myPointers* pointers){
+	if(!strncmp(hashtableX,"hashtable1",10))
+		if((pointers->table1) == NULL)
+			printf("Hashtable1 is empty.\n");
+		else
+			print_hashtable1(pointers->table1);
+	else if(!strncmp(hashtableX,"hashtable2",10))
+		if((pointers->table2) == NULL)
+                        printf("Hashtable2 is empty.\n");
+                else
+                        print_hashtable2(pointers->table2);
+	else
+		printf("No such hashtable\n");
+        return;
+}
+
+
+void dump_function(char* hashtableX,char* filename,myPointers* pointers){
+	FILE* fp;
+	char buf[255];
+	filename[strcspn(filename,"\r")]='\0';
+	strcpy(buf,filename);
+	if(!strcmp(hashtableX,"hashtable1")){
+                if((pointers->table1) == NULL)
+                        printf("Hashtable1 is empty.\n");
+                else{
+                        fp = fopen(buf,"w+");
+			//fp = fopen("hash1.txt","w+");
+		        if(fp == NULL){
+                		printf("Error creating file\n");
+                		return;
+        		}
+			dump_hashtable1(fp,pointers->table1);
+			fclose(fp);
+		}
+	}
+        else if(!strcmp(hashtableX,"hashtable2")){
+                if((pointers->table2) == NULL)
+                        printf("Hashtable2 is empty.\n");
+                else{
+                        fp = fopen(buf,"w+");
+			//fp = fopen("hash2.txt","w+");
+                        if(fp == NULL){
+                                printf("Error creating file\n");
+                                return;
+                        }
+                        dump_hashtable2(fp,pointers->table2);
+                        fclose(fp);
+                }
+	}
+        else{
+                printf("No such hashtable\n");
+		return;
+	}
+	fp = fopen(filename,"w+");
+	if(fp == NULL){
+		printf("Error creating file\n");
+        	return;
+	}
+	fclose(fp);
+}
+
